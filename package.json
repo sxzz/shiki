@@ -71,6 +71,7 @@
     "tsx": "catalog:cli",
     "typescript": "catalog:cli",
     "unbuild": "catalog:bundling",
+    "unplugin-quansync": "catalog:bundling",
     "vite": "catalog:bundling",
     "vite-tsconfig-paths": "catalog:bundling",
     "vitepress-plugin-mermaid": "catalog:docs",
