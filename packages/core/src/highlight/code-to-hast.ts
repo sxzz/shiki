@@ -1,13 +1,14 @@
 import type {
-  AsyncTransformerOptions,
   CodeToHastOptions,
   CodeToHastRenderOptions,
   GrammarState,
   ShikiInternal,
+  ShikiTransformer,
   ShikiTransformerContext,
   ShikiTransformerContextCommon,
   ShikiTransformerContextSource,
   ThemedToken,
+  TransformerOptions,
 } from '@shikijs/types'
 import type {
   Element,
@@ -18,16 +19,16 @@ import { FontStyle } from '@shikijs/vscode-textmate'
 import { quansync } from 'quansync/macro'
 import { getLastGrammarStateFromMap, setLastGrammarStateToMap } from '../textmate/grammar-state'
 import { addClassToHast, getTokenStyleObject, stringifyTokenStyle } from '../utils'
-import { getAsyncTransformers } from './_get-transformers'
+import { getTransformers } from './_get-transformers'
 import { codeToTokens } from './code-to-tokens'
 
-const $tokensToHast = quansync(async (
+export const $tokensToHast = quansync(async (
   tokens: ThemedToken[][],
-  options: CodeToHastRenderOptions & AsyncTransformerOptions,
+  options: CodeToHastRenderOptions & TransformerOptions,
   transformerContext: ShikiTransformerContextSource,
   grammarState: GrammarState | undefined = getLastGrammarStateFromMap(tokens),
 ): Promise<Root> => {
-  const transformers = getAsyncTransformers(options)
+  const transformers: ShikiTransformer<boolean>[] = getTransformers(options)
 
   const lines: (Element | Text)[] = []
   const root: Root = {
@@ -182,10 +183,10 @@ const $tokensToHast = quansync(async (
 
 export const tokensToHast = $tokensToHast.sync
 
-const $codeToHast = quansync(async (
+export const $codeToHast = quansync(async (
   internal: ShikiInternal,
   code: string,
-  options: CodeToHastOptions & AsyncTransformerOptions,
+  options: CodeToHastOptions & TransformerOptions,
   transformerContext: ShikiTransformerContextCommon = {
     meta: {},
     options,
@@ -195,7 +196,7 @@ const $codeToHast = quansync(async (
 ): Promise<Root> => {
   let input = code
 
-  const transformers = getAsyncTransformers(options)
+  const transformers = getTransformers(options)
 
   for (const transformer of transformers) {
     if (transformer?.preprocess)

@@ -3,33 +3,28 @@ import type { CodeToHastOptions } from './options'
 import type { CodeToTokensOptions, ThemedToken, TokensResult } from './tokens'
 import type { Awaitable } from './utils'
 
+export type IfAwaitable<C, T> = C extends true ? Awaitable<T> : T
+
 export interface TransformerOptions {
   /**
    * Transformers for the Shiki pipeline.
    */
-  transformers?: ShikiTransformer[]
+  transformers?: ShikiTransformer<boolean>[]
 }
 
-export interface AsyncTransformerOptions {
-  /**
-   * Async transformers for the Shiki pipeline.
-   */
-  transformers?: ShikiAsyncTransformer[]
-}
-
-export interface ShikiTransformerContextMeta { }
+export interface ShikiTransformerContextMeta {}
 
 /**
  * Common transformer context for all transformers hooks
  */
-export interface ShikiTransformerContextCommon {
+export interface ShikiTransformerContextCommon<Async = false> {
   meta: ShikiTransformerContextMeta
   options: CodeToHastOptions
-  codeToHast: (code: string, options: CodeToHastOptions) => Root
-  codeToTokens: (code: string, options: CodeToTokensOptions) => TokensResult
+  codeToHast: (code: string, options: CodeToHastOptions) => IfAwaitable<Async, Root>
+  codeToTokens: (code: string, options: CodeToTokensOptions) => IfAwaitable<Async, TokensResult>
 }
 
-export interface ShikiTransformerContextSource extends ShikiTransformerContextCommon {
+export interface ShikiTransformerContextSource<Async = false> extends ShikiTransformerContextCommon<Async> {
   readonly source: string
 }
 
@@ -53,7 +48,7 @@ export interface ShikiTransformerContext extends ShikiTransformerContextSource {
   addClassToHast: (hast: Element, className: string | string[]) => Element
 }
 
-export interface ShikiTransformer {
+export interface ShikiTransformer<Async = false> {
   /**
    * Name of the transformer
    */
@@ -61,82 +56,38 @@ export interface ShikiTransformer {
   /**
    * Transform the raw input code before passing to the highlighter.
    */
-  preprocess?: (this: ShikiTransformerContextCommon, code: string, options: CodeToHastOptions) => string | void
+  preprocess?: (this: ShikiTransformerContextCommon, code: string, options: CodeToHastOptions) => IfAwaitable<Async, string | void>
   /**
    * Transform the full tokens list before converting to HAST.
    * Return a new tokens list will replace the original one.
    */
-  tokens?: (this: ShikiTransformerContextSource, tokens: ThemedToken[][]) => ThemedToken[][] | void
+  tokens?: (this: ShikiTransformerContextSource, tokens: ThemedToken[][]) => IfAwaitable<Async, ThemedToken[][] | void>
   /**
    * Transform the entire generated HAST tree. Return a new Node will replace the original one.
    */
-  root?: (this: ShikiTransformerContext, hast: Root) => Root | void
+  root?: (this: ShikiTransformerContext, hast: Root) => IfAwaitable<Async, Root | void>
   /**
    * Transform the `<pre>` element. Return a new Node will replace the original one.
    */
-  pre?: (this: ShikiTransformerContext, hast: Element) => Element | void
+  pre?: (this: ShikiTransformerContext, hast: Element) => IfAwaitable<Async, Element | void>
   /**
    * Transform the `<code>` element. Return a new Node will replace the original one.
    */
-  code?: (this: ShikiTransformerContext, hast: Element) => Element | void
+  code?: (this: ShikiTransformerContext, hast: Element) => IfAwaitable<Async, Element | void>
   /**
    * Transform each line `<span class="line">` element.
    *
    * @param hast
    * @param line 1-based line number
    */
-  line?: (this: ShikiTransformerContext, hast: Element, line: number) => Element | void
+  line?: (this: ShikiTransformerContext, hast: Element, line: number) => IfAwaitable<Async, Element | void>
   /**
    * Transform each token `<span>` element.
    */
-  span?: (this: ShikiTransformerContext, hast: Element, line: number, col: number, lineElement: Element, token: ThemedToken) => Element | void
+  span?: (this: ShikiTransformerContext, hast: Element, line: number, col: number, lineElement: Element, token: ThemedToken) => IfAwaitable<Async, Element | void>
   /**
    * Transform the generated HTML string before returning.
    * This hook will only be called with `codeToHtml`.
    */
-  postprocess?: (this: ShikiTransformerContextCommon, html: string, options: CodeToHastOptions) => string | void
-}
-
-export interface ShikiAsyncTransformer {
-  /**
-   * Name of the transformer
-   */
-  name?: string
-  /**
-   * Transform the raw input code before passing to the highlighter.
-   */
-  preprocess?: (this: ShikiTransformerContextCommon, code: string, options: CodeToHastOptions) => Awaitable<string | void>
-  /**
-   * Transform the full tokens list before converting to HAST.
-   * Return a new tokens list will replace the original one.
-   */
-  tokens?: (this: ShikiTransformerContextSource, tokens: ThemedToken[][]) => Awaitable<ThemedToken[][] | void>
-  /**
-   * Transform the entire generated HAST tree. Return a new Node will replace the original one.
-   */
-  root?: (this: ShikiTransformerContext, hast: Root) => Awaitable<Root | void>
-  /**
-   * Transform the `<pre>` element. Return a new Node will replace the original one.
-   */
-  pre?: (this: ShikiTransformerContext, hast: Element) => Awaitable<Element | void>
-  /**
-   * Transform the `<code>` element. Return a new Node will replace the original one.
-   */
-  code?: (this: ShikiTransformerContext, hast: Element) => Awaitable<Element | void>
-  /**
-   * Transform each line `<span class="line">` element.
-   *
-   * @param hast
-   * @param line 1-based line number
-   */
-  line?: (this: ShikiTransformerContext, hast: Element, line: number) => Awaitable<Element | void>
-  /**
-   * Transform each token `<span>` element.
-   */
-  span?: (this: ShikiTransformerContext, hast: Element, line: number, col: number, lineElement: Element, token: ThemedToken) => Awaitable<Element | void>
-  /**
-   * Transform the generated HTML string before returning.
-   * This hook will only be called with `codeToHtml`.
-   */
-  postprocess?: (this: ShikiTransformerContextCommon, html: string, options: CodeToHastOptions) => Awaitable<string | void>
+  postprocess?: (this: ShikiTransformerContextCommon, html: string, options: CodeToHastOptions) => IfAwaitable<Async, string | void>
 }
